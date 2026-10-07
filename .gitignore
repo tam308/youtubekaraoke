@@ -1,0 +1,60 @@
+# The repo only holds what's needed to build the apps, plus the README.
+
+# Downloaded toolchain and packages
+node_modules/
+.tools/
+
+# Build output
+out/
+release/
+releases*/
+*.blob
+*.zip
+*.exe
+*.app/
+
+# App data created at runtime
+KaraokeData/
+
+# Personal icon (build.py uses it when present, otherwise the default icon in assets/)
+assets/local/
+
+# Kept on the developer's PC only (not needed to build): docs, tests, icon generator,
+# GitHub workflows and their release-notes script
+tests/
+vitest.config.ts
+scripts/make_icon.py
+scripts/release_notes.py
+.github/
+*.md
+!README.md
+*.txt
+*.local
+*.bak
+*.tmp
+
+# Secrets and certificates: never commit
+.env
+.env.*
+*.pfx
+*.p12
+*.pem
+*.key
+*.cer
+*.crt
+
+# Logs, caches, OS and editor files
+*.log
+npm-debug.log*
+coverage/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# Kept locally, not published
+LICENSE

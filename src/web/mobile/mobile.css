@@ -1,0 +1,29 @@
+.mobile { position: fixed; inset: 0; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
+.m-header { flex: none; background: var(--panel); border-bottom: 1px solid var(--line); }
+.m-top { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px 0; }
+.m-body { flex: 1; min-height: 0; }
+.mobile .now-playing { padding: 8px 12px 10px; }
+.mobile .video-row .thumb { flex-basis: 84px; }
+.mobile .toasts { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+.mobile .tab { padding: 12px 6px; font-size: 14px; }
+/* Bigger touch targets on phones. */
+.mobile .btn.small { padding: 7px 12px; }
+.mobile .drag-handle { width: 34px; padding: 8px 0; }
+
+.nickname-gate {
+  min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center;
+  background: var(--bg);
+}
+.nickname-gate h1 { margin: 0; }
+.nickname-gate p { margin: 0 0 8px; max-width: 22em; }
+.nickname-gate input { max-width: 320px; text-align: center; font-size: 18px; }
+.nickname-gate .btn { width: 100%; max-width: 320px; padding: 12px; font-size: 16px; }
+.gate-logo { width: 80px; height: 80px; border-radius: 22%; }
+.brand-icon { width: 22px; height: 22px; border-radius: 6px; vertical-align: -5px; margin-right: 4px; }
+
+.volume-panel { align-items: center; justify-content: center; gap: 18px; padding: 24px; }
+.vol-value { font-size: 48px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.vol-buttons { display: flex; gap: 12px; width: 100%; max-width: 360px; }
+.vol-btn { flex: 1; padding: 20px 0; font-size: 22px; }
+.volume-panel input[type='range'] { width: 100%; max-width: 360px; accent-color: var(--accent); }
+.vol-hint { text-align: center; max-width: 360px; margin: 0; }

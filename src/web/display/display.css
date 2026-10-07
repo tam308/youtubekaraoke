@@ -1,0 +1,218 @@
+/* ---- layout: one grid, the player never moves in the DOM ---- */
+.display {
+  position: fixed; inset: 0; display: grid; grid-template-columns: 1fr; overflow: hidden;
+}
+.display.mode-local:not(.collapsed) {
+  grid-template-columns: clamp(320px, calc(var(--ratio, 0.3333) * 100vw), 60vw) 6px minmax(0, 1fr);
+}
+
+.control-pane { min-width: 0; min-height: 0; background: var(--panel); overflow: hidden; }
+.control-pane-inner { display: flex; flex-direction: column; height: 100%; }
+/* Wraps the buttons onto a second line when the pane is narrow, instead of pushing them out of view. */
+.cp-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.brand { font-weight: 800; letter-spacing: 0.01em; white-space: nowrap; }
+.cp-header-actions { display: flex; gap: 4px; align-items: center; }
+.control-pane .now-playing { border-bottom: 1px solid var(--line); flex-wrap: wrap; row-gap: 8px; }
+.cp-browser { flex: 1; min-height: 0; }
+
+.splitter { cursor: col-resize; background: var(--line); transition: background 0.15s; touch-action: none; }
+.splitter:hover { background: var(--accent); }
+.drag-shield { position: fixed; inset: 0; z-index: 50; cursor: col-resize; }
+
+.stage { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #000; overflow: hidden; }
+.player-box { position: relative; background: #000; }
+.mode-local:not(.collapsed) .player-box {
+  flex: none; width: min(100%, calc((100vh - 150px) * 16 / 9)); aspect-ratio: 16 / 9; margin: 0 auto;
+}
+.mode-party .player-box, .mode-local.collapsed .player-box { position: absolute; inset: 0; }
+/* The visible 16:9 frame inside the player box (container units = the player box's size). */
+.player-box { container-type: size; }
+.yt-frame {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(100cqw, calc(100cqh * 16 / 9)); aspect-ratio: 16 / 9; overflow: hidden;
+}
+.yt-container { position: absolute; inset: 0; }
+/* Trimmed: the player is taller than the frame, so YouTube's title and control bar (drawn at its
+   top and bottom edges, over letterbox bars) fall outside the visible frame. Only a resize. */
+.yt-frame.trimmed .yt-container { top: -120px; bottom: -120px; }
+.yt-container iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+.idle-screen {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px;
+  background: var(--bg);
+}
+.idle-screen h1 { margin: 8px 0; font-size: clamp(24px, 4vw, 48px); }
+.idle-screen p { color: var(--muted); font-size: clamp(14px, 1.6vw, 20px); max-width: 32em; }
+.idle-logo { width: clamp(64px, 8vw, 96px); height: auto; border-radius: 22%; }
+
+.expand-pane { position: absolute; top: 12px; left: 12px; z-index: 10; opacity: 0.35; }
+.expand-pane:hover { opacity: 1; }
+
+/* ---- local mode: strip under the video ---- */
+.up-next-strip {
+  flex: 1; min-height: 0; display: flex; gap: 28px; padding: 14px 24px; overflow: hidden; background: var(--bg); border-top: 1px solid var(--line);
+}
+.uns-now { flex: 0 0 min(34%, 360px); min-width: 0; }
+.uns-next { flex: 1; min-width: 0; }
+.uns-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
+.uns-singer { font-size: 20px; font-weight: 700; }
+.uns-title { font-size: 14px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.uns-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.uns-card { display: flex; gap: 10px; align-items: center; min-width: 0; font-size: 12px; }
+.uns-card img { flex: 0 0 80px; width: 80px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; }
+.uns-card > div { min-width: 0; }
+.uns-card-title { font-weight: 600; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ---- party overlay ---- */
+.party-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.party-overlay > * { pointer-events: auto; }
+/* Covers the whole video; "Change YouTube video settings" (menu) switches it off. */
+.activity-layer { position: absolute; inset: 0; cursor: none; }
+.party-overlay.ui-visible .activity-layer { cursor: default; }
+.fade { opacity: 0; transition: opacity 0.35s; pointer-events: none !important; }
+.ui-visible .fade { opacity: 1; pointer-events: auto !important; }
+
+/* Menu button (top-left) and its panel: the only party-mode UI over the video. */
+.po-burger {
+  position: absolute; top: 16px; left: 16px; z-index: 6; width: 44px; height: 44px; padding: 12px 11px;
+  display: flex; flex-direction: column; justify-content: space-between; cursor: pointer;
+  background: rgba(13, 26, 47, 0.88); border: 1px solid var(--line); border-radius: var(--radius-sm);
+}
+.po-burger span { display: block; height: 2px; border-radius: 1px; background: var(--text); }
+.po-burger:hover, .po-burger.open { background: var(--panel-3); }
+.po-menu {
+  position: absolute; top: 68px; left: 16px; z-index: 6; width: min(380px, calc(100vw - 32px)); max-height: calc(100vh - 160px); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px; padding: 12px;
+  background: rgba(13, 26, 47, 0.97); border: 1px solid var(--line); border-radius: var(--radius);
+}
+.po-menu .now-playing { padding: 8px 0; flex-wrap: wrap; row-gap: 8px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+/* Party menu and Local-mode pane are narrow: song info gets the full row, and pause / volume /
+   skip go on their own row below it, so the title and "queued by" never get squeezed. */
+.po-menu .np-info, .control-pane .np-info { flex: 1 1 200px; }
+.po-menu .np-controls, .control-pane .np-controls { flex: 1 1 100%; justify-content: space-between; flex-wrap: wrap; row-gap: 6px; }
+.po-menu .transport, .control-pane .transport { flex: 1; min-width: 0; }
+.po-menu .volume, .control-pane .volume { flex: 1; min-width: 0; }
+/* The slider gives up space first, so Skip always fits on the same row. */
+.po-menu .volume input, .control-pane .volume input { flex: 1; width: 0; min-width: 40px; }
+.po-menu-items { display: flex; flex-direction: column; gap: 6px; }
+.po-menu-items .btn { justify-content: flex-start; width: 100%; }
+.brand-icon { width: 22px; height: 22px; border-radius: 6px; vertical-align: -5px; margin-right: 4px; }
+
+.po-upnext {
+  position: absolute; left: 20px; bottom: 18px; max-width: 60vw; padding: 6px 12px; border-radius: 6px;
+  background: rgba(7, 16, 31, 0.72); font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none !important;
+}
+.po-upnext .uns-label { display: inline; margin-right: 6px; }
+.po-corner-qr {
+  position: absolute; right: 20px; bottom: 18px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 10px 6px;
+  background: #fff; color: #111; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.po-corner-qr .qr-img { display: block; }
+
+.po-drawer {
+  position: absolute; top: 0; right: 0; bottom: 0; width: min(460px, 92vw); display: flex; flex-direction: column; z-index: 20;
+  background: rgba(13, 26, 47, 0.97); border-left: 1px solid var(--line); 
+  transform: translateX(105%); transition: transform 0.25s ease;
+}
+.po-drawer.open { transform: none; }
+.po-drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.po-drawer .song-browser { flex: 1; min-height: 0; height: auto; }
+
+/* ---- transport ---- */
+.transport { display: flex; align-items: center; gap: 6px; }
+.volume { display: flex; align-items: center; gap: 4px; font-size: 14px; }
+.volume input { width: 80px; accent-color: var(--accent); }
+
+/* ---- splash, banners, misc screens ---- */
+.splash {
+  position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: var(--bg);
+  transition: opacity 0.4s ease;
+}
+.splash.leaving { opacity: 0; pointer-events: none; }
+.splash-logo { width: 96px; height: 96px; border-radius: 22%; }
+.splash h1 { margin: 16px 0 12px; font-size: 22px; font-weight: 600; }
+.splash-bar { width: min(280px, 70vw); height: 4px; border-radius: 2px; background: var(--panel-3); overflow: hidden; }
+.splash-bar-fill { height: 100%; width: 0; background: var(--accent); animation: splash-fill linear forwards; }
+.splash-version { margin-top: 10px; color: var(--muted); font-size: 13px; }
+@keyframes splash-fill { to { width: 100%; } }
+
+.center-screen { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+.display-banner { position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 950; border-radius: 0 0 12px 12px; overflow: hidden; }
+
+/* ---- dialogs ---- */
+.qr-modal { text-align: center; }
+.qr-modal .qr-img { background: #fff; padding: 10px; border-radius: 8px; }
+.join-url { font-size: 20px; font-weight: 700; font-family: ui-monospace, Consolas, monospace; margin: 12px 0 4px; }
+.field { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.field > span { font-size: 13px; color: var(--muted); }
+.check { display: flex; align-items: center; gap: 8px; margin: 6px 0; cursor: pointer; }
+.check input { accent-color: var(--accent); width: 18px; height: 18px; }
+.hint { font-size: 13px; color: var(--muted); margin: 4px 0 8px; }
+.hint code { font-size: 12px; word-break: break-all; }
+.hint a { color: var(--accent); }
+details.help { margin: 6px 0; font-size: 13px; color: var(--muted); }
+details.help summary { cursor: pointer; color: var(--text); }
+details.help ol { padding-left: 20px; }
+table.shortcuts { border-collapse: collapse; font-size: 13px; }
+table.shortcuts td { padding: 3px 12px 3px 0; }
+kbd { display: inline-block; min-width: 28px; padding: 1px 6px; border-radius: 5px; background: var(--panel-3); border: 1px solid var(--line); text-align: center; font-family: inherit; }
+
+/* ---- playlist manager ---- */
+.playlist-manager { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); overflow-y: auto; max-height: 100%; }
+.pm-add, .pm-rename { display: flex; gap: 8px; }
+.pm-preview { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: var(--radius-sm); background: var(--panel-2); }
+.pm-list { display: flex; flex-direction: column; gap: 6px; }
+.pm-row { padding: 8px 10px; border-radius: var(--radius-sm); background: var(--panel-2); }
+.pm-name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-actions { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+
+
+.callout { margin: 8px 0; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 13px; text-align: left; }
+.callout p { margin: 6px 0 10px; color: var(--muted); }
+.callout.warn { background: rgba(255, 181, 71, 0.1); border: 1px solid rgba(255, 181, 71, 0.4); }
+.ok-text { color: var(--ok) !important; }
+.qr-help { text-align: left; margin-top: 8px; }
+
+/* ---- end-of-song curtain (hides YouTube's end-screen suggestions) ---- */
+.end-curtain {
+  position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: var(--bg);
+}
+.ec-card { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; max-width: 560px; }
+.ec-card img { width: min(320px, 60%); aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; }
+.ec-title { font-size: clamp(18px, 2.2vw, 28px); font-weight: 700; }
+.ec-sub { color: var(--muted); font-size: clamp(13px, 1.4vw, 18px); }
+
+.unmute-banner {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 4; padding: 12px 22px; border: none; border-radius: var(--radius-sm);
+  background: var(--accent); color: #fff; font-size: 17px; font-weight: 600; cursor: pointer;
+}
+
+.security-help ol { padding-left: 20px; margin: 6px 0; }
+.security-help .guide { margin-bottom: 8px; }
+.help h4 { color: var(--text); }
+
+/* ---- blocked song playing in a youtube.com pop-up ---- */
+.popup-notice { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg); }
+.pn-card { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; max-width: 560px; }
+.pn-card img { width: min(280px, 60%); aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; }
+.pn-card h2 { margin: 6px 0 0; font-size: 22px; }
+.pn-title { font-weight: 600; }
+.pn-card p { margin: 4px 0; }
+.pn-countdown { font-size: 18px; font-variant-numeric: tabular-nums; }
+.pn-actions { display: flex; gap: 8px; margin-top: 6px; }
+
+
+/* "Change YouTube video settings": the whole player is clickable, with one button to come back. */
+.activity-layer.pass-through { pointer-events: none !important; }
+.po-yt-done {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 7; padding: 8px 16px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm); background: rgba(13, 26, 47, 0.92); color: var(--text);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.po-yt-done:hover { background: var(--panel-3); }
+
+/* "Change YouTube video settings" under now playing: centred, with space above and below. */
+.cp-yt { display: flex; justify-content: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.cp-yt .po-yt-done { position: static; transform: none; width: 100%; }
